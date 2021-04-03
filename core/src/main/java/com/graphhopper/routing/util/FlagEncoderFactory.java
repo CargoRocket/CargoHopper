@@ -27,6 +27,7 @@ public interface FlagEncoderFactory {
     String CAR4WD = "car4wd";
     String BIKE = "bike";
     String BIKE2 = "bike2";
+    String CARGOBIKE = "cargobike";
     String RACINGBIKE = "racingbike";
     String MOUNTAINBIKE = "mtb";
     String FOOT = "foot";

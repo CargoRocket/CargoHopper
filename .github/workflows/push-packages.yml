@@ -10,11 +10,11 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
-      - name: Install SSH key
+      - name: Install ssh key
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          name: id_rsa # optional
+          name: id_rsa
           known_hosts: ${{ secrets.KNOWN_HOSTS }}
       - name: Pushing to remote repository
         run: |

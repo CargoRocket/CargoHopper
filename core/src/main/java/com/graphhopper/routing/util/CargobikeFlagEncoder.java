@@ -18,6 +18,8 @@
 package com.graphhopper.routing.util;
 
 import com.graphhopper.util.PMap;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Specifies the settings for cycletouring/trekking
@@ -25,10 +27,12 @@ import com.graphhopper.util.PMap;
  * @author ratrun
  * @author Peter Karich
  */
-public class CargobikeFlagEncoder extends BikeCommonFlagEncoder {
+public class CargobikeFlagEncoder extends Bike2WeightFlagEncoder {
     public CargobikeFlagEncoder() {
         this(4, 2, 0);
     }
+
+    private final Map<String, Integer> surfaceSpeeds = new HashMap<>();
 
     public CargobikeFlagEncoder(PMap properties) {
         this(properties.getInt("speed_bits", 4),
@@ -41,12 +45,36 @@ public class CargobikeFlagEncoder extends BikeCommonFlagEncoder {
     }
 
     public CargobikeFlagEncoder(int speedBits, double speedFactor, int maxTurnCosts) {
-        super(speedBits, speedFactor, maxTurnCosts);
-        addPushingSection("path");
+        super();
         addPushingSection("footway");
         addPushingSection("pedestrian");
         addPushingSection("steps");
         addPushingSection("platform");
+
+        setTrackTypeSpeed("grade1", 18); // paved
+        setTrackTypeSpeed("grade2", 8); // now unpaved ...
+        setTrackTypeSpeed("grade3", 4);
+        setTrackTypeSpeed("grade4", 4);
+        setTrackTypeSpeed("grade5", 4); // like sand/grass
+
+        setSurfaceSpeed("cobblestone", 8);
+        setSurfaceSpeed("cobblestone:flattened", 10);
+        setSurfaceSpeed("concrete:lanes", 10);
+        setSurfaceSpeed("concrete:plates", 10);
+        setSurfaceSpeed("paving_stones", 18);
+        setSurfaceSpeed("paving_stones:30", 12);
+        setSurfaceSpeed("unpaved", 14);
+        setSurfaceSpeed("compacted", 16);
+        setSurfaceSpeed("dirt", 8);
+        setSurfaceSpeed("earth", 8);
+        setSurfaceSpeed("fine_gravel", 10);
+        setSurfaceSpeed("grass", 6);
+        setSurfaceSpeed("grass_paver", 6);
+        setSurfaceSpeed("gravel", 6);
+        setSurfaceSpeed("ground", 8);
+        setSurfaceSpeed("pebblestone", 8);
+
+        setHighwaySpeed("steps", 0);
 
         avoidHighwayTags.add("trunk");
         avoidHighwayTags.add("trunk_link");
@@ -63,6 +91,9 @@ public class CargobikeFlagEncoder extends BikeCommonFlagEncoder {
         preferHighwayTags.add("unclassified");
 
         absoluteBarriers.add("kissing_gate");
+        // TODO make depending on max width on barrier
+        // absoluteBarriers.add("bollard");
+        // absoluteBarriers.add("cycle_barrier");
         setSpecificClassBicycle("touring");
     }
 

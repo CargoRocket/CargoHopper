@@ -1,0 +1,24 @@
+{
+  "priority": [
+    {
+      "if": "road_class == RESIDENTIAL",
+      "multiply_by": 1.0
+    },
+    {
+      "if": "road_class == PATH",
+      "multiply_by": 1.0
+    },
+    {
+      "if": "max_width <= 1.5 && (road_class == CYCLEWAY || road_class == PATH)",
+      "multiply_by": 0.1
+    },
+    {
+      "if": "max_width < 2 && (road_class == CYCLEWAY || road_class == PATH)",
+      "multiply_by": 0.4
+    },
+    {
+      "if": "max_width < 2 && road_class != PATH && road_class != CYCLEWAY",
+      "multiply_by": 0.0
+    }
+  ]
+}

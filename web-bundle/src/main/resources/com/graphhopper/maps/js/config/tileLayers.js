@@ -20,18 +20,8 @@ var lyrk = L.tileLayer('https://tiles.lyrk.org/' + (retinaTiles ? 'lr' : 'ls') +
     attribution: osmAttr + ', <a href="https://geodienste.lyrk.de/">Lyrk</a>'
 });
 
-var omniscale = L.tileLayer('https://maps.omniscale.net/v2/' +osAPIKey + '/style.default/{z}/{x}/{y}.png' + (retinaTiles ? '?hq=true' : ''), {
-    layers: 'osm',
-    attribution: osmAttr + ', &copy; <a href="https://maps.omniscale.com/">Omniscale</a>'
-});
-
-// Not an option as too fast over limit.
-// var mapbox= L.tileLayer('https://{s}.tiles.mapbox.com/v4/peterk.map-vkt0kusv/{z}/{x}/{y}' + (retinaTiles ? '@2x' : '') + '.png?access_token=pk.eyJ1IjoicGV0ZXJrIiwiYSI6IkdFc2FJd2MifQ.YUd7dS_gOpT3xrQnB8_K-w', {
-//     attribution: osmAttr + ', <a href="https://www.mapbox.com/about/maps/">&copy; MapBox</a>'
-// });
-
-var sorbianLang = L.tileLayer('http://a.tile.openstreetmap.de/tiles/osmhrb/{z}/{x}/{y}.png', {
-    attribution: osmAttr + ', <a href="http://www.alberding.eu/">&copy; Alberding GmbH, CC-BY-SA</a>'
+var cyclosm = L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', {
+    attribution: osmAttr + ', &copy; Cyclosm'
 });
 
 var thunderTransport = L.tileLayer('https://{s}.tile.thunderforest.com/transport/{z}/{x}/{y}.png' + tfAddition, {
@@ -76,7 +66,7 @@ var esriAerial = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/servic
 });
 
 var availableTileLayers = {
-    "Omniscale": omniscale,
+    "Cyclosm": cyclosm,
     "OpenStreetMap": osm,
     "Esri Aerial": esriAerial,
     "TF Transport": thunderTransport,
@@ -86,7 +76,6 @@ var availableTileLayers = {
     "Kurviger Liberty": kurvigerLiberty,
     "Lyrk": lyrk,
     "WanderReitKarte": wrk,
-    "Sorbian Language": sorbianLang,
     "OpenStreetMap.de": osmde
 };
 
@@ -157,8 +146,8 @@ module.exports.enableVectorTiles = function () {
     overlays = { "Local MVT": vtLayer };
 }
 
-module.exports.activeLayerName = "Omniscale";
-module.exports.defaultLayer = omniscale;
+module.exports.activeLayerName = "Cyclosm";
+module.exports.defaultLayer = cyclosm;
 
 module.exports.getAvailableTileLayers = function () {
     return availableTileLayers;

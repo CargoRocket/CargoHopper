@@ -92,8 +92,8 @@ public class CargobikeFlagEncoder extends Bike2WeightFlagEncoder {
 
         absoluteBarriers.add("kissing_gate");
         // TODO make depending on max width on barrier
-        // absoluteBarriers.add("bollard");
-        // absoluteBarriers.add("cycle_barrier");
+        potentialBarriers.add("bollard");
+        potentialBarriers.add("cycle_barrier");
         setSpecificClassBicycle("touring");
     }
 

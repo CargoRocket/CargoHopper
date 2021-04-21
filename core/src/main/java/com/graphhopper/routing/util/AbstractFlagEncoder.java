@@ -181,6 +181,16 @@ public abstract class AbstractFlagEncoder implements FlagEncoder {
             if (node.hasTag("locked", "yes"))
                 locked = true;
 
+            if(node.hasTag("maxwidth:physical")){
+                String value = node.getTag("maxwidth:physical");
+
+                double maxwidth = OSMValueExtractor.stringToMeter(value);
+
+                if(maxwidth < 1.5){
+                    return encoderBit;
+                }
+            }
+
             for (String res : restrictions) {
                 if (!locked && node.hasTag(res, intendedValues))
                     return 0;

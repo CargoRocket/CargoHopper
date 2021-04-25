@@ -17,9 +17,15 @@
  */
 package com.graphhopper.routing.util;
 
+import com.graphhopper.routing.ev.EncodedValue;
+import com.graphhopper.routing.ev.UnsignedDecimalEncodedValue;
+import com.graphhopper.routing.weighting.CargoBikeIndexWeighting;
 import com.graphhopper.util.PMap;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import static com.graphhopper.routing.util.EncodingManager.getKey;
 
 /**
  * Specifies the settings for cycletouring/trekking
@@ -27,7 +33,7 @@ import java.util.Map;
  * @author ratrun
  * @author Peter Karich
  */
-public class CargobikeFlagEncoder extends Bike2WeightFlagEncoder {
+public class CargobikeFlagEncoder extends BikeFlagEncoder {
     public CargobikeFlagEncoder() {
         this(4, 2, 0);
     }
@@ -99,7 +105,21 @@ public class CargobikeFlagEncoder extends Bike2WeightFlagEncoder {
 
     @Override
     public int getVersion() {
-        return 2;
+        return 1;
+    }
+
+    @Override
+    public boolean supports(Class<?> feature) {
+        if (super.supports(feature))
+            return true;
+
+        return CargoBikeIndexWeighting.class.isAssignableFrom(feature);
+    }
+
+    @Override
+    public void createEncodedValues(List<EncodedValue> registerNewEncodedValue, String prefix, int index) {
+        super.createEncodedValues(registerNewEncodedValue, prefix, index);
+        registerNewEncodedValue.add(priorityEnc = new UnsignedDecimalEncodedValue(getKey(prefix, "cargobikeindex"), 3, CargoBikeIndexCode.getFactor(1), true));
     }
 
     @Override

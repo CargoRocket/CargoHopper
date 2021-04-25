@@ -19,6 +19,7 @@ package com.graphhopper.routing.util;
 
 import com.graphhopper.reader.ReaderWay;
 import com.graphhopper.routing.ev.*;
+import com.graphhopper.routing.weighting.CargoBikeIndexWeighting;
 import com.graphhopper.routing.weighting.PriorityWeighting;
 import com.graphhopper.storage.IntsRef;
 import com.graphhopper.util.Helper;
@@ -560,6 +561,10 @@ abstract public class BikeCommonFlagEncoder extends AbstractFlagEncoder {
     public boolean supports(Class<?> feature) {
         if (super.supports(feature))
             return true;
+
+        if(feature == CargoBikeIndexWeighting.class && this.getClass() == Bike2WeightFlagEncoder.class){
+            return false;
+        }
 
         return PriorityWeighting.class.isAssignableFrom(feature);
     }

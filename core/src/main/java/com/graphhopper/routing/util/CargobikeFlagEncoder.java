@@ -1,4 +1,5 @@
-/*
+/* Introduced by CargoRocket, based on Bike2WeightFlagEncoder.java
+ *
  *  Licensed to GraphHopper GmbH under one or more contributor
  *  license agreements. See the NOTICE file distributed with this work for
  *  additional information regarding copyright ownership.
@@ -55,13 +56,12 @@ public class CargobikeFlagEncoder extends BikeFlagEncoder {
         addPushingSection("footway");
         addPushingSection("pedestrian");
         addPushingSection("steps");
-        addPushingSection("platform");
 
         setTrackTypeSpeed("grade1", 18); // paved
-        setTrackTypeSpeed("grade2", 8); // now unpaved ...
+        setTrackTypeSpeed("grade2", 6); // now unpaved ...
         setTrackTypeSpeed("grade3", 4);
-        setTrackTypeSpeed("grade4", 4);
-        setTrackTypeSpeed("grade5", 4); // like sand/grass
+        setTrackTypeSpeed("grade4", 3);
+        setTrackTypeSpeed("grade5", 2); // like sand/grass
 
         setSurfaceSpeed("cobblestone", 8);
         setSurfaceSpeed("cobblestone:flattened", 10);
@@ -69,16 +69,16 @@ public class CargobikeFlagEncoder extends BikeFlagEncoder {
         setSurfaceSpeed("concrete:plates", 10);
         setSurfaceSpeed("paving_stones", 18);
         setSurfaceSpeed("paving_stones:30", 12);
-        setSurfaceSpeed("unpaved", 14);
-        setSurfaceSpeed("compacted", 16);
-        setSurfaceSpeed("dirt", 8);
-        setSurfaceSpeed("earth", 8);
-        setSurfaceSpeed("fine_gravel", 10);
-        setSurfaceSpeed("grass", 6);
-        setSurfaceSpeed("grass_paver", 6);
-        setSurfaceSpeed("gravel", 6);
-        setSurfaceSpeed("ground", 8);
-        setSurfaceSpeed("pebblestone", 8);
+        setSurfaceSpeed("unpaved", 6);
+        setSurfaceSpeed("compacted", 6);
+        setSurfaceSpeed("dirt", 4);
+        setSurfaceSpeed("earth", 4);
+        setSurfaceSpeed("fine_gravel", 8);
+        setSurfaceSpeed("grass", 4);
+        setSurfaceSpeed("grass_paver", 4);
+        setSurfaceSpeed("gravel", 4);
+        setSurfaceSpeed("ground", 4);
+        setSurfaceSpeed("pebblestone", 6);
 
         setHighwaySpeed("steps", 0);
 

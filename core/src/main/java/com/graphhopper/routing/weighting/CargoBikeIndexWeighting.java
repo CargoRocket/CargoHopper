@@ -19,29 +19,30 @@
 package com.graphhopper.routing.weighting;
 
 import com.graphhopper.routing.ev.DecimalEncodedValue;
+import com.graphhopper.routing.util.CargoBikeIndexCode;
 import com.graphhopper.routing.util.EncodingManager;
 import com.graphhopper.routing.util.FlagEncoder;
-import com.graphhopper.routing.util.PriorityCode;
 import com.graphhopper.util.EdgeIteratorState;
 import com.graphhopper.util.PMap;
-
-import static com.graphhopper.routing.util.PriorityCode.BEST;
+import static com.graphhopper.routing.util.CargoBikeIndexCode.OPTIMAL;
 
 /**
  * Support for CargoBikeIndex
  *
  * @author Henri Chilla
  */
-public class CargoBikeIndexWeighting extends PriorityWeighting {
+public class CargoBikeIndexWeighting extends FastestWeighting {
 
     private final double minFactor;
-    private final DecimalEncodedValue priorityEnc;
+    private final DecimalEncodedValue cargobikability;
 
     public CargoBikeIndexWeighting(FlagEncoder encoder, PMap pMap, TurnCostProvider turnCostProvider) {
         super(encoder, pMap, turnCostProvider);
-        priorityEnc = encoder.getDecimalEncodedValue(EncodingManager.getKey(encoder, "cargobikeindex"));
-        double maxPriority = PriorityCode.getFactor(BEST.getValue());
-        minFactor = 1 / (0.5 + maxPriority);
+        String key = EncodingManager.getKey(encoder, "cargobikeindex");
+        cargobikability = encoder.getDecimalEncodedValue(key);
+
+        double maxPriority = CargoBikeIndexCode.getFactor(OPTIMAL.getValue());
+        minFactor = 0.0;
     }
 
     @Override
@@ -54,6 +55,8 @@ public class CargoBikeIndexWeighting extends PriorityWeighting {
         double weight = super.calcEdgeWeight(edgeState, reverse);
         if (Double.isInfinite(weight))
             return Double.POSITIVE_INFINITY;
-        return weight / (0.5 + edgeState.get(priorityEnc));
+        double cargofactor = edgeState.get(cargobikability);
+        double newWeight = weight * cargofactor;
+        return newWeight;
     }
 }

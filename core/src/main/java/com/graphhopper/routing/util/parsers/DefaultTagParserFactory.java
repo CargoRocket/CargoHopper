@@ -70,6 +70,8 @@ public class DefaultTagParserFactory implements TagParserFactory {
             return new OSMHikeRatingParser();
         else if (name.equals(HorseRating.KEY))
             return new OSMHorseRatingParser();
+        else if (name.equals(CargoBikeIndexRating.KEY))
+            return new OSMCargoBikeIndexRatingParser();
         else if (name.equals(Country.KEY))
             throw new IllegalArgumentException("The property spatial_rules.borders_directory is required in the configuration " +
                     "when using 'country' in encoded_values");

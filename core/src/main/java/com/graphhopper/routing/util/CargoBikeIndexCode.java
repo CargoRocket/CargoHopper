@@ -1,4 +1,4 @@
-/*  Introduced by CargoRocket, based on PriorityCode
+/*  Introduced by CargoRocket, based on PriorityCode.java
  *
  *  Licensed to GraphHopper GmbH under one or more contributor
  *  license agreements. See the NOTICE file distributed with this work for
@@ -42,7 +42,7 @@ public enum CargoBikeIndexCode {
     }
 
     /**
-     * This method returns the CargoBikeIndexCode.value in a range between 0 and 1 suitable for direct usage in a Weighting.
+     * This method returns the CargoBikeIndexCode value in a range between 0 and 1 suitable for direct usage in a Weighting.
      */
     public static double getFactor(int val) {
         return (double) val / OPTIMAL.getValue();

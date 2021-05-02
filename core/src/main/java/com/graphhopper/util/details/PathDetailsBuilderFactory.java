@@ -1,4 +1,5 @@
-/*
+/* Changed by CargoRocket.
+ *
  *  Licensed to GraphHopper GmbH under one or more contributor
  *  license agreements. See the NOTICE file distributed with this work for
  *  additional information regarding copyright ownership.
@@ -18,6 +19,7 @@
 package com.graphhopper.util.details;
 
 import com.graphhopper.routing.ev.*;
+import com.graphhopper.routing.util.CargoBikeIndexCode;
 import com.graphhopper.routing.weighting.Weighting;
 
 import java.util.ArrayList;
@@ -81,7 +83,7 @@ public class PathDetailsBuilderFactory {
                 builders.add(new EnumDetails<>(key, evl.getEnumEncodedValue(key, Enum.class)));
         }
 
-        for (String key : Arrays.asList(MtbRating.KEY, HikeRating.KEY, HorseRating.KEY)) {
+        for (String key : Arrays.asList(MtbRating.KEY, HikeRating.KEY, HorseRating.KEY, CargoBikeIndexRating.KEY)) {
             if (requestedPathDetails.contains(key) && evl.hasEncodedValue(key))
                 builders.add(new IntDetails(key, evl.getIntEncodedValue(key)));
         }

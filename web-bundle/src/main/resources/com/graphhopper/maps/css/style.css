@@ -192,7 +192,11 @@ body {
     padding-bottom: 15px;
 }
 #header_img img {
-    width: 230px;
+    height: 90px;
+}
+#header_img .logo-wrapper {
+    display: flex;
+    justify-content: center;
 }
 
 #gpx_dialog {

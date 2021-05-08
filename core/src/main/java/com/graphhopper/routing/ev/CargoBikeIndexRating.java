@@ -3,7 +3,7 @@ package com.graphhopper.routing.ev;
 public class CargoBikeIndexRating {
     public static final String KEY = "cargobikeindex";
 
-    public static IntEncodedValue create() {
-        return new UnsignedIntEncodedValue(KEY, 3, true);
+    public static DecimalEncodedValue create() {
+        return new UnsignedDecimalEncodedValue(KEY, 6, 0.1, false);
     }
 }

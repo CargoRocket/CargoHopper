@@ -29,10 +29,9 @@ import java.util.Map;
 import static com.graphhopper.routing.util.EncodingManager.getKey;
 
 /**
- * Specifies the settings for cycletouring/trekking
+ * Specifies the settings for Cargobikes with rating from CargoRocket
  *
- * @author ratrun
- * @author Peter Karich
+ * @author Henri Chilla
  */
 public class CargobikeFlagEncoder extends BikeFlagEncoder {
     public CargobikeFlagEncoder() {
@@ -119,7 +118,7 @@ public class CargobikeFlagEncoder extends BikeFlagEncoder {
     @Override
     public void createEncodedValues(List<EncodedValue> registerNewEncodedValue, String prefix, int index) {
         super.createEncodedValues(registerNewEncodedValue, prefix, index);
-        registerNewEncodedValue.add(priorityEnc = new UnsignedDecimalEncodedValue(getKey(prefix, "cargobikeindex"), 3, CargoBikeIndexCode.getFactor(1), true));
+        registerNewEncodedValue.add(priorityEnc = new UnsignedDecimalEncodedValue(getKey(prefix, "cargobikeindex"), 6, 0.1, false));
     }
 
     @Override

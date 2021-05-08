@@ -29,7 +29,7 @@ import java.util.List;
  */
 public class OSMCargoBikeIndexRatingParser implements TagParser {
 
-    private final IntEncodedValue cargoBikeIndex;
+    private final DecimalEncodedValue cargoBikeIndex;
 
     public OSMCargoBikeIndexRatingParser() {
         this.cargoBikeIndex = CargoBikeIndexRating.create();
@@ -43,13 +43,13 @@ public class OSMCargoBikeIndexRatingParser implements TagParser {
     @Override
     public IntsRef handleWayTags(IntsRef edgeFlags, ReaderWay readerWay, boolean ferry, IntsRef relationFlags) {
         String tag = readerWay.getTag("cargobikeindex");
-        int rating = 0;
+        double rating = 0;
         if (tag != null) {
-            Integer index = Integer.parseInt(tag);
+            double index = Double.parseDouble(tag);
             rating = index;
         }
         if (rating != 0)
-            cargoBikeIndex.setInt(false, edgeFlags, rating);
+            cargoBikeIndex.setDecimal(false, edgeFlags, rating);
         return edgeFlags;
     }
 }

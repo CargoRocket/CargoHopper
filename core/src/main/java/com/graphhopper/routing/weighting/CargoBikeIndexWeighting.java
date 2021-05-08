@@ -19,19 +19,17 @@
 package com.graphhopper.routing.weighting;
 
 import com.graphhopper.routing.ev.DecimalEncodedValue;
-import com.graphhopper.routing.util.CargoBikeIndexCode;
 import com.graphhopper.routing.util.EncodingManager;
 import com.graphhopper.routing.util.FlagEncoder;
 import com.graphhopper.util.EdgeIteratorState;
 import com.graphhopper.util.PMap;
-import static com.graphhopper.routing.util.CargoBikeIndexCode.OPTIMAL;
 
 /**
  * Support for CargoBikeIndex
  *
  * @author Henri Chilla
  */
-public class CargoBikeIndexWeighting extends FastestWeighting {
+public class CargoBikeIndexWeighting extends PriorityWeighting {
 
     private final double minFactor;
     private final DecimalEncodedValue cargobikability;
@@ -41,8 +39,9 @@ public class CargoBikeIndexWeighting extends FastestWeighting {
         String key = EncodingManager.getKey(encoder, "cargobikeindex");
         cargobikability = encoder.getDecimalEncodedValue(key);
 
-        double maxPriority = CargoBikeIndexCode.getFactor(OPTIMAL.getValue());
+        double maxPriority = 5.0;
         minFactor = 0.0;
+        double UNSET = -1.0;
     }
 
     @Override

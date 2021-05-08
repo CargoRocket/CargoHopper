@@ -19,7 +19,6 @@
 package com.graphhopper.util.details;
 
 import com.graphhopper.routing.ev.*;
-import com.graphhopper.routing.util.CargoBikeIndexCode;
 import com.graphhopper.routing.weighting.Weighting;
 
 import java.util.ArrayList;
@@ -66,7 +65,7 @@ public class PathDetailsBuilderFactory {
         }
 
         for (String key : Arrays.asList(MaxSpeed.KEY, MaxWidth.KEY, MaxHeight.KEY, MaxWeight.KEY,
-                MaxAxleLoad.KEY, MaxLength.KEY)) {
+                MaxAxleLoad.KEY, MaxLength.KEY, CargoBikeIndexRating.KEY)) {
             if (requestedPathDetails.contains(key) && evl.hasEncodedValue(key))
                 builders.add(new DecimalDetails(key, evl.getDecimalEncodedValue(key)));
         }
@@ -83,7 +82,7 @@ public class PathDetailsBuilderFactory {
                 builders.add(new EnumDetails<>(key, evl.getEnumEncodedValue(key, Enum.class)));
         }
 
-        for (String key : Arrays.asList(MtbRating.KEY, HikeRating.KEY, HorseRating.KEY, CargoBikeIndexRating.KEY)) {
+        for (String key : Arrays.asList(MtbRating.KEY, HikeRating.KEY, HorseRating.KEY)) {
             if (requestedPathDetails.contains(key) && evl.hasEncodedValue(key))
                 builders.add(new IntDetails(key, evl.getIntEncodedValue(key)));
         }

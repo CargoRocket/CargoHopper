@@ -18,13 +18,12 @@
  */
 package com.graphhopper.routing.util;
 
+import com.graphhopper.routing.ev.DecimalEncodedValue;
 import com.graphhopper.routing.ev.EncodedValue;
 import com.graphhopper.routing.ev.UnsignedDecimalEncodedValue;
 import com.graphhopper.routing.weighting.CargoBikeIndexWeighting;
 import com.graphhopper.util.PMap;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static com.graphhopper.routing.util.EncodingManager.getKey;
 
@@ -34,11 +33,11 @@ import static com.graphhopper.routing.util.EncodingManager.getKey;
  * @author Henri Chilla
  */
 public class CargobikeFlagEncoder extends BikeFlagEncoder {
+    DecimalEncodedValue cargobikeindexEnc;
+
     public CargobikeFlagEncoder() {
         this(4, 2, 0);
     }
-
-    private final Map<String, Integer> surfaceSpeeds = new HashMap<>();
 
     public CargobikeFlagEncoder(PMap properties) {
         this(properties.getInt("speed_bits", 4),
@@ -81,25 +80,11 @@ public class CargobikeFlagEncoder extends BikeFlagEncoder {
 
         setHighwaySpeed("steps", 0);
 
-        avoidHighwayTags.add("trunk");
-        avoidHighwayTags.add("trunk_link");
-        avoidHighwayTags.add("primary");
-        avoidHighwayTags.add("primary_link");
-        avoidHighwayTags.add("secondary");
-        avoidHighwayTags.add("secondary_link");
-
-        // preferHighwayTags.add("road");
-        preferHighwayTags.add("service");
-        preferHighwayTags.add("tertiary");
-        preferHighwayTags.add("tertiary_link");
-        preferHighwayTags.add("residential");
-        preferHighwayTags.add("unclassified");
-
         absoluteBarriers.add("kissing_gate");
         // TODO make depending on max width on barrier
-        potentialBarriers.add("bollard");
-        potentialBarriers.add("cycle_barrier");
-        setSpecificClassBicycle("touring");
+        //potentialBarriers.add("bollard");
+        //potentialBarriers.add("cycle_barrier");
+        //setSpecificClassBicycle("touring");
     }
 
     @Override
@@ -118,7 +103,7 @@ public class CargobikeFlagEncoder extends BikeFlagEncoder {
     @Override
     public void createEncodedValues(List<EncodedValue> registerNewEncodedValue, String prefix, int index) {
         super.createEncodedValues(registerNewEncodedValue, prefix, index);
-        registerNewEncodedValue.add(priorityEnc = new UnsignedDecimalEncodedValue(getKey(prefix, "cargobikeindex"), 6, 0.1, false));
+        registerNewEncodedValue.add(cargobikeindexEnc = new UnsignedDecimalEncodedValue(getKey(prefix, "cargobikeindex"), 6, 0.1, Double.POSITIVE_INFINITY, false));
     }
 
     @Override

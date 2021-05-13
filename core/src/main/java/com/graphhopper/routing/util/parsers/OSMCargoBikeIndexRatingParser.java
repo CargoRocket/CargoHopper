@@ -46,6 +46,7 @@ public class OSMCargoBikeIndexRatingParser implements TagParser {
 
     @Override
     public IntsRef handleWayTags(IntsRef edgeFlags, ReaderWay readerWay, boolean ferry, IntsRef relationFlags) {
+        // TODO: Check if still necessary
         String tag = readerWay.getTag("cbi");
         double rating = 0;
         if (tag != null) {

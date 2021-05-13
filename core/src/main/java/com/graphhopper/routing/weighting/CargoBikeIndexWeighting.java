@@ -56,12 +56,8 @@ public class CargoBikeIndexWeighting extends FastestWeighting {
         if (Double.isInfinite(weight))
             return Double.POSITIVE_INFINITY;
         if ( !Double.isInfinite(cbi_value)) {
-            weight = weight * cbi_value;
-            if(cbi_value < 0.5){
-                weight = weight * 10;
-            } else {
-                weight = weight / cbi_value;
-            }
+            double cargofactor = -Math.log(cbi_value) + 2.2;
+            weight = weight * cargofactor;
         }
         return weight;
     }

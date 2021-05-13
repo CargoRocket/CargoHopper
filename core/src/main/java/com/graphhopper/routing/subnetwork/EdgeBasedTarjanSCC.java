@@ -18,14 +18,9 @@
 
 package com.graphhopper.routing.subnetwork;
 
-import com.carrotsearch.hppc.BitSet;
-import com.carrotsearch.hppc.IntArrayDeque;
-import com.carrotsearch.hppc.IntArrayList;
-import com.carrotsearch.hppc.LongArrayDeque;
-import com.graphhopper.routing.ev.BooleanEncodedValue;
+import com.carrotsearch.hppc.*;
+import com.carrotsearch.hppc.cursors.IntCursor;
 import com.graphhopper.routing.util.AllEdgesIterator;
-import com.graphhopper.routing.util.DefaultEdgeFilter;
-import com.graphhopper.routing.weighting.TurnCostProvider;
 import com.graphhopper.storage.Graph;
 import com.graphhopper.util.BitUtil;
 import com.graphhopper.util.EdgeExplorer;
@@ -50,18 +45,17 @@ import java.util.List;
  */
 public class EdgeBasedTarjanSCC {
     private final Graph graph;
-    private final BooleanEncodedValue accessEnc;
+    private final EdgeTransitionFilter edgeTransitionFilter;
     private final EdgeExplorer explorer;
     private final BitUtil bitUtil = BitUtil.LITTLE;
-    private final TurnCostProvider turnCostProvider;
-    private final int[] edgeKeyIndex;
-    private final int[] edgeKeyLowLink;
-    private final BitSet edgeKeyOnStack;
     private final IntArrayDeque tarjanStack;
     private final LongArrayDeque dfsStackPQ;
     private final IntArrayDeque dfsStackAdj;
     private final ConnectedComponents components;
     private final boolean excludeSingleEdgeComponents;
+    private TarjanIntIntMap edgeKeyIndex;
+    private TarjanIntIntMap edgeKeyLowLink;
+    private TarjanIntSet edgeKeyOnStack;
 
     private int currIndex = 0;
     private int p;
@@ -70,31 +64,62 @@ public class EdgeBasedTarjanSCC {
     private State dfsState;
 
     /**
-     * @param excludeSingleEdgeComponents if set to false components that only contain a single edge will not be
+     * Runs Tarjan's algorithm using an explicit stack.
+     *
+     * @param edgeTransitionFilter        Only edge transitions accepted by this filter will be considered when we explore the graph.
+     *                                    If a turn is not accepted the corresponding path will be ignored (edges that are only connected
+     *                                    by a path with such a turn will not be considered to belong to the same component)
+     * @param excludeSingleEdgeComponents if set to true components that only contain a single edge will not be
      *                                    returned when calling {@link #findComponents} or {@link #findComponentsRecursive()},
      *                                    which can be useful to save some memory.
-     * @param turnCostProvider            used to check the turn costs between edges. if a turn has infinite costs the corresponding
-     *                                    path will be ignored (edges that are only connected by a path with such a turn will not
-     *                                    be considered to belong to the same component)
      */
-    public EdgeBasedTarjanSCC(Graph graph, BooleanEncodedValue accessEnc, TurnCostProvider turnCostProvider, boolean excludeSingleEdgeComponents) {
-        this.graph = graph;
-        this.accessEnc = accessEnc;
-        explorer = graph.createEdgeExplorer(DefaultEdgeFilter.outEdges(accessEnc));
-        this.turnCostProvider = turnCostProvider;
+    public static ConnectedComponents findComponents(Graph graph, EdgeTransitionFilter edgeTransitionFilter, boolean excludeSingleEdgeComponents) {
+        return new EdgeBasedTarjanSCC(graph, edgeTransitionFilter, excludeSingleEdgeComponents).findComponents();
+    }
 
-        edgeKeyIndex = new int[2 * graph.getEdges()];
-        edgeKeyLowLink = new int[2 * graph.getEdges()];
-        Arrays.fill(edgeKeyIndex, -1);
-        Arrays.fill(edgeKeyLowLink, -1);
-        edgeKeyOnStack = new BitSet(2 * graph.getEdges());
-        if (!edgeKeyOnStack.getClass().getName().contains("hppc"))
-            throw new IllegalStateException("Was meant to be hppc BitSet");
+    /**
+     * Like {@link #findComponents(Graph, EdgeTransitionFilter, boolean)}, but the search only starts at the
+     * given edges. This does not mean the search cannot expand to other edges, but this can be controlled by the
+     * edgeTransitionFilter. This method does not return single edge components (the excludeSingleEdgeComponents option is
+     * set to true).
+     */
+    public static ConnectedComponents findComponentsForStartEdges(Graph graph, EdgeTransitionFilter edgeTransitionFilter, IntContainer edges) {
+        return new EdgeBasedTarjanSCC(graph, edgeTransitionFilter, true).findComponentsForStartEdges(edges);
+    }
+
+    /**
+     * Runs Tarjan's algorithm in a recursive way. Doing it like this requires a large stack size for large graphs,
+     * which can be set like `-Xss1024M`. Usually the version using an explicit stack ({@link #findComponents()}) should be
+     * preferred. However, this recursive implementation is easier to understand.
+     *
+     * @see #findComponents(Graph, EdgeTransitionFilter, boolean)
+     */
+    public static ConnectedComponents findComponentsRecursive(Graph graph, EdgeTransitionFilter edgeTransitionFilter, boolean excludeSingleEdgeComponents) {
+        return new EdgeBasedTarjanSCC(graph, edgeTransitionFilter, excludeSingleEdgeComponents).findComponentsRecursive();
+    }
+
+    private EdgeBasedTarjanSCC(Graph graph, EdgeTransitionFilter edgeTransitionFilter, boolean excludeSingleEdgeComponents) {
+        this.graph = graph;
+        this.edgeTransitionFilter = edgeTransitionFilter;
+        this.explorer = graph.createEdgeExplorer();
         tarjanStack = new IntArrayDeque();
         dfsStackPQ = new LongArrayDeque();
         dfsStackAdj = new IntArrayDeque();
         components = new ConnectedComponents(excludeSingleEdgeComponents ? -1 : 2 * graph.getEdges());
         this.excludeSingleEdgeComponents = excludeSingleEdgeComponents;
+    }
+
+    private void initForEntireGraph() {
+        final int edges = graph.getEdges();
+        edgeKeyIndex = new TarjanArrayIntIntMap(2 * edges);
+        edgeKeyLowLink = new TarjanArrayIntIntMap(2 * edges);
+        edgeKeyOnStack = new TarjanArrayIntSet(2 * edges);
+    }
+
+    private void initForStartEdges(int edges) {
+        edgeKeyIndex = new TarjanHashIntIntMap(2 * edges);
+        edgeKeyLowLink = new TarjanHashIntIntMap(2 * edges);
+        edgeKeyOnStack = new TarjanHashIntSet(2 * edges);
     }
 
     private enum State {
@@ -104,19 +129,15 @@ public class EdgeBasedTarjanSCC {
         BUILD_COMPONENT
     }
 
-    /**
-     * Runs Tarjan's algorithm in a recursive way. Doing it like this requires a large stack size for large graphs,
-     * which can be set like `-Xss1024M`. Usually the version using an explicit stack ({@link #findComponents()}) should be
-     * preferred. However, this recursive implementation is easier to understand.
-     */
-    public ConnectedComponents findComponentsRecursive() {
+    private ConnectedComponents findComponentsRecursive() {
+        initForEntireGraph();
         AllEdgesIterator iter = graph.getAllEdges();
         while (iter.next()) {
             int edgeKeyFwd = createEdgeKey(iter, false);
-            if (edgeKeyIndex[edgeKeyFwd] == -1)
+            if (!edgeKeyIndex.has(edgeKeyFwd))
                 findComponentForEdgeKey(edgeKeyFwd, iter.getAdjNode());
             int edgeKeyBwd = createEdgeKey(iter, true);
-            if (edgeKeyIndex[edgeKeyBwd] == -1)
+            if (!edgeKeyIndex.has(edgeKeyBwd))
                 findComponentForEdgeKey(edgeKeyBwd, iter.getAdjNode());
         }
         return components;
@@ -126,10 +147,10 @@ public class EdgeBasedTarjanSCC {
         setupNextEdgeKey(p);
         // we have to create a new explorer on each iteration because of the nested edge iterations
         final int edge = getEdgeFromKey(p);
-        EdgeExplorer explorer = graph.createEdgeExplorer(DefaultEdgeFilter.outEdges(accessEnc));
+        EdgeExplorer explorer = graph.createEdgeExplorer();
         EdgeIterator iter = explorer.setBaseNode(adjNode);
         while (iter.next()) {
-            if (isTurnRestricted(edge, adjNode, iter.getEdge()))
+            if (!edgeTransitionFilter.accept(edge, iter))
                 continue;
             int q = createEdgeKey(iter, false);
             handleNeighbor(p, q, iter.getAdjNode());
@@ -142,26 +163,26 @@ public class EdgeBasedTarjanSCC {
     }
 
     private void setupNextEdgeKey(int p) {
-        edgeKeyIndex[p] = currIndex;
-        edgeKeyLowLink[p] = currIndex;
+        edgeKeyIndex.set(p, currIndex);
+        edgeKeyLowLink.set(p, currIndex);
         currIndex++;
         tarjanStack.addLast(p);
-        edgeKeyOnStack.set(p);
+        edgeKeyOnStack.add(p);
     }
 
     private void handleNeighbor(int p, int q, int adj) {
-        if (edgeKeyIndex[q] == -1) {
+        if (!edgeKeyIndex.has(q)) {
             findComponentForEdgeKey(q, adj);
-            edgeKeyLowLink[p] = Math.min(edgeKeyLowLink[p], edgeKeyLowLink[q]);
-        } else if (edgeKeyOnStack.get(q))
-            edgeKeyLowLink[p] = Math.min(edgeKeyLowLink[p], edgeKeyIndex[q]);
+            edgeKeyLowLink.minTo(p, edgeKeyLowLink.get(q));
+        } else if (edgeKeyOnStack.contains(q))
+            edgeKeyLowLink.minTo(p, edgeKeyIndex.get(q));
     }
 
     private void buildComponent(int p) {
-        if (edgeKeyLowLink[p] == edgeKeyIndex[p]) {
+        if (edgeKeyLowLink.get(p) == edgeKeyIndex.get(p)) {
             if (tarjanStack.getLast() == p) {
                 tarjanStack.removeLast();
-                edgeKeyOnStack.clear(p);
+                edgeKeyOnStack.remove(p);
                 components.numComponents++;
                 components.numEdgeKeys++;
                 if (!excludeSingleEdgeComponents)
@@ -171,7 +192,7 @@ public class EdgeBasedTarjanSCC {
                 while (true) {
                     int q = tarjanStack.removeLast();
                     component.add(q);
-                    edgeKeyOnStack.clear(q);
+                    edgeKeyOnStack.remove(q);
                     if (q == p)
                         break;
                 }
@@ -186,24 +207,36 @@ public class EdgeBasedTarjanSCC {
         }
     }
 
-    /**
-     * Runs Tarjan's algorithm using an explicit stack.
-     */
-    public ConnectedComponents findComponents() {
+    private ConnectedComponents findComponents() {
+        initForEntireGraph();
         AllEdgesIterator iter = graph.getAllEdges();
         while (iter.next()) {
-            int edgeKeyFwd = createEdgeKey(iter, false);
-            if (edgeKeyIndex[edgeKeyFwd] == -1)
-                pushFindComponentForEdgeKey(edgeKeyFwd, iter.getAdjNode());
-            startSearch();
-            // We need to start the search for both edge keys of this edge, but its important to check if the second
-            // has already been found by the first search. So we cannot simply push them both and start the search once.
-            int edgeKeyBwd = createEdgeKey(iter, true);
-            if (edgeKeyIndex[edgeKeyBwd] == -1)
-                pushFindComponentForEdgeKey(edgeKeyBwd, iter.getAdjNode());
-            startSearch();
+            findComponentsForEdgeState(iter);
         }
         return components;
+    }
+
+    private ConnectedComponents findComponentsForStartEdges(IntContainer startEdges) {
+        initForStartEdges(startEdges.size());
+        for (IntCursor edge : startEdges) {
+            // todo: using getEdgeIteratorState here is not efficient
+            EdgeIteratorState edgeState = graph.getEdgeIteratorState(edge.value, Integer.MIN_VALUE);
+            findComponentsForEdgeState(edgeState);
+        }
+        return components;
+    }
+
+    private void findComponentsForEdgeState(EdgeIteratorState edge) {
+        int edgeKeyFwd = createEdgeKey(edge, false);
+        if (!edgeKeyIndex.has(edgeKeyFwd))
+            pushFindComponentForEdgeKey(edgeKeyFwd, edge.getAdjNode());
+        startSearch();
+        // We need to start the search for both edge keys of this edge, but its important to check if the second
+        // has already been found by the first search. So we cannot simply push them both and start the search once.
+        int edgeKeyBwd = createEdgeKey(edge, true);
+        if (!edgeKeyIndex.has(edgeKeyBwd))
+            pushFindComponentForEdgeKey(edgeKeyBwd, edge.getAdjNode());
+        startSearch();
     }
 
     private void startSearch() {
@@ -214,12 +247,12 @@ public class EdgeBasedTarjanSCC {
                     buildComponent(p);
                     break;
                 case UPDATE:
-                    edgeKeyLowLink[p] = Math.min(edgeKeyLowLink[p], edgeKeyLowLink[q]);
+                    edgeKeyLowLink.minTo(p, edgeKeyLowLink.get(q));
                     break;
                 case HANDLE_NEIGHBOR:
-                    if (edgeKeyIndex[q] != -1 && edgeKeyOnStack.get(q))
-                        edgeKeyLowLink[p] = Math.min(edgeKeyLowLink[p], edgeKeyIndex[q]);
-                    if (edgeKeyIndex[q] == -1) {
+                    if (edgeKeyIndex.has(q) && edgeKeyOnStack.contains(q))
+                        edgeKeyLowLink.minTo(p, edgeKeyIndex.get(q));
+                    if (!edgeKeyIndex.has(q)) {
                         // we are pushing updateLowLinks first so it will run *after* findComponent finishes
                         pushUpdateLowLinks(p, q);
                         pushFindComponentForEdgeKey(q, adj);
@@ -232,7 +265,7 @@ public class EdgeBasedTarjanSCC {
                     final int edge = getEdgeFromKey(p);
                     EdgeIterator it = explorer.setBaseNode(adj);
                     while (it.next()) {
-                        if (isTurnRestricted(edge, adj, it.getEdge()))
+                        if (!edgeTransitionFilter.accept(edge, it))
                             continue;
                         int q = createEdgeKey(it, false);
                         pushHandleNeighbor(p, q, it.getAdjNode());
@@ -306,8 +339,12 @@ public class EdgeBasedTarjanSCC {
         dfsStackAdj.addLast(adj);
     }
 
-    private boolean isTurnRestricted(int inEdge, int node, int outEdge) {
-        return turnCostProvider.calcTurnWeight(inEdge, node, outEdge) == Double.POSITIVE_INFINITY;
+    /**
+     * Use this method to return the edge for the specified edgeKeys that get returned by {@link #findComponents()}} etc.
+     * The implementation is like GHUtility.getEdgeFromEdgeKey but might be different in the future. See #2152.
+     */
+    public static int getEdgeFromKey(int edgeKey) {
+        return edgeKey / 2;
     }
 
     public static int createEdgeKey(EdgeIteratorState edgeState, boolean reverse) {
@@ -315,10 +352,6 @@ public class EdgeBasedTarjanSCC {
         if (edgeState.get(EdgeIteratorState.REVERSE_STATE) == !reverse)
             edgeKey++;
         return edgeKey;
-    }
-
-    public static int getEdgeFromKey(int edgeKey) {
-        return edgeKey / 2;
     }
 
     public static class ConnectedComponents {
@@ -340,7 +373,8 @@ public class EdgeBasedTarjanSCC {
          * A list of arrays each containing the edge keys of a strongly connected component. Components with only a single
          * edge key are not included here, but need to be obtained using {@link #getSingleEdgeComponents()}.
          * The edge key is either 2*edgeId (if the edge direction corresponds to the storage order) or 2*edgeId+1 (for
-         * the opposite direction).
+         * the opposite direction). Use {@link EdgeBasedTarjanSCC#getEdgeFromKey(int)} to convert edge keys back to
+         * edge IDs.
          */
         public List<IntArrayList> getComponents() {
             return components;
@@ -373,7 +407,138 @@ public class EdgeBasedTarjanSCC {
         public int getEdgeKeys() {
             return numEdgeKeys;
         }
-
     }
+
+    private interface TarjanIntIntMap {
+        void set(int key, int value);
+
+        void minTo(int key, int min);
+
+        boolean has(int key);
+
+        int get(int key);
+    }
+
+    private static class TarjanArrayIntIntMap implements TarjanIntIntMap {
+        private final int[] arr;
+
+        TarjanArrayIntIntMap(int elements) {
+            arr = new int[elements];
+            Arrays.fill(arr, -1);
+        }
+
+        @Override
+        public void set(int key, int value) {
+            arr[key] = value;
+        }
+
+        @Override
+        public void minTo(int key, int value) {
+            arr[key] = Math.min(arr[key], value);
+        }
+
+        @Override
+        public boolean has(int key) {
+            return arr[key] != -1;
+        }
+
+        @Override
+        public int get(int key) {
+            return arr[key];
+        }
+    }
+
+    private static class TarjanHashIntIntMap implements TarjanIntIntMap {
+        private final IntIntScatterMap map;
+
+        TarjanHashIntIntMap(int keys) {
+            this.map = new IntIntScatterMap(keys);
+        }
+
+        @Override
+        public void set(int key, int value) {
+            map.put(key, value);
+        }
+
+        @Override
+        public void minTo(int key, int value) {
+            // todonow: optimize
+            map.put(key, Math.min(map.getOrDefault(key, -1), value));
+        }
+
+        @Override
+        public boolean has(int key) {
+            return map.containsKey(key);
+        }
+
+        @Override
+        public int get(int key) {
+            return map.getOrDefault(key, -1);
+        }
+    }
+
+    private interface TarjanIntSet {
+        void add(int key);
+
+        boolean contains(int key);
+
+        void remove(int key);
+    }
+
+    private static class TarjanArrayIntSet implements TarjanIntSet {
+        private final BitSet set;
+
+        TarjanArrayIntSet(int keys) {
+            set = new BitSet(keys);
+            if (!set.getClass().getName().contains("hppc"))
+                throw new IllegalStateException("Was meant to be hppc BitSet");
+        }
+
+        @Override
+        public void add(int key) {
+            set.set(key);
+        }
+
+        @Override
+        public boolean contains(int key) {
+            return set.get(key);
+        }
+
+        @Override
+        public void remove(int key) {
+            set.clear(key);
+        }
+    }
+
+    private static class TarjanHashIntSet implements TarjanIntSet {
+        private final IntScatterSet set;
+
+        TarjanHashIntSet(int keys) {
+            set = new IntScatterSet(keys);
+        }
+
+        @Override
+        public void add(int key) {
+            set.add(key);
+        }
+
+        @Override
+        public boolean contains(int key) {
+            return set.contains(key);
+        }
+
+        @Override
+        public void remove(int key) {
+            set.remove(key);
+        }
+    }
+
+    public interface EdgeTransitionFilter {
+        /**
+         * @return true if edgeState is allowed *and* turning from prevEdge onto edgeState is allowed, false otherwise
+         */
+        boolean accept(int prevEdge, EdgeIteratorState edgeState);
+    }
+
 }
 

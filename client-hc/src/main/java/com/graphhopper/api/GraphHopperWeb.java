@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.graphhopper.GHRequest;
 import com.graphhopper.GHResponse;
-import com.graphhopper.GraphHopperAPI;
 import com.graphhopper.ResponsePath;
 import com.graphhopper.jackson.Jackson;
 import com.graphhopper.jackson.ResponsePathDeserializer;
@@ -37,10 +36,7 @@ import okhttp3.ResponseBody;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static com.graphhopper.api.GraphHopperMatrixWeb.*;
@@ -55,11 +51,11 @@ import static com.graphhopper.util.Parameters.Routing.INSTRUCTIONS;
  *
  * @author Peter Karich
  */
-public class GraphHopperWeb implements GraphHopperAPI {
+public class GraphHopperWeb {
 
     private final ObjectMapper objectMapper;
+    private final String routeServiceUrl;
     private OkHttpClient downloader;
-    private String routeServiceUrl;
     private String key = "";
     private boolean instructions = true;
     private boolean calcPoints = true;
@@ -106,7 +102,6 @@ public class GraphHopperWeb implements GraphHopperAPI {
         ignoreSet.add("algorithm");
         ignoreSet.add("locale");
         ignoreSet.add("point");
-        ignoreSet.add("vehicle");
 
         // some are special and need to be avoided
         ignoreSet.add("points_encoded");
@@ -129,20 +124,16 @@ public class GraphHopperWeb implements GraphHopperAPI {
         return downloader;
     }
 
-    @Override
-    public boolean load(String serviceUrl) {
-        this.routeServiceUrl = serviceUrl;
-        return true;
-    }
-
     public GraphHopperWeb setKey(String key) {
-        if (key == null || key.isEmpty()) {
-            throw new IllegalStateException("Key cannot be empty");
+        Objects.requireNonNull(key,"Key must not be null");
+        if (key.isEmpty()) {
+            throw new IllegalArgumentException("Key must not be empty");
         }
 
         this.key = key;
         return this;
     }
+
 
     /**
      * Use new endpoint 'POST /route' instead of 'GET /route'
@@ -191,7 +182,6 @@ public class GraphHopperWeb implements GraphHopperAPI {
         return this;
     }
 
-    @Override
     public GHResponse route(GHRequest ghRequest) {
         ResponseBody rspBody = null;
         try {
@@ -286,7 +276,7 @@ public class GraphHopperWeb implements GraphHopperAPI {
         return builder.build();
     }
 
-    private Request createGetRequest(GHRequest ghRequest) {
+    Request createGetRequest(GHRequest ghRequest) {
         boolean tmpInstructions = ghRequest.getHints().getBool(INSTRUCTIONS, instructions);
         boolean tmpCalcPoints = ghRequest.getHints().getBool(CALC_POINTS, calcPoints);
         String tmpOptimize = ghRequest.getHints().getString("optimize", optimize);
@@ -317,10 +307,6 @@ public class GraphHopperWeb implements GraphHopperAPI {
                 + "&locale=" + ghRequest.getLocale().toString()
                 + "&elevation=" + tmpElevation
                 + "&optimize=" + tmpOptimize;
-
-        if (ghRequest.getHints().has("vehicle")) {
-            url += "&vehicle=" + ghRequest.getHints().getString("vehicle", "");
-        }
 
         for (String details : ghRequest.getPathDetails()) {
             url += "&" + Parameters.Details.PATH_DETAILS + "=" + details;

@@ -24,6 +24,7 @@ import com.graphhopper.Repeat;
 import com.graphhopper.RepeatRule;
 import com.graphhopper.routing.ch.CHRoutingAlgorithmFactory;
 import com.graphhopper.routing.ch.PrepareContractionHierarchies;
+import com.graphhopper.routing.ev.Subnetwork;
 import com.graphhopper.routing.lm.LMConfig;
 import com.graphhopper.routing.lm.PerfectApproximator;
 import com.graphhopper.routing.lm.PrepareLandmarks;
@@ -132,7 +133,7 @@ public class RandomizedRoutingTest {
         // fail sometimes for edge-based algorithms, #1631, but maybe we can should disable different fwd/bwd speeds
         // only for loops instead?
         encoder = new CarFlagEncoder(5, 5, maxTurnCosts);
-        encodingManager = EncodingManager.create(encoder);
+        encodingManager = new EncodingManager.Builder().add(encoder).add(Subnetwork.create("car")).build();
         graph = new GraphBuilder(encodingManager)
                 .setCHConfigStrings("p1|car|fastest|node", "p2|car|fastest|edge")
                 .setDir(dir)
@@ -140,7 +141,7 @@ public class RandomizedRoutingTest {
         turnCostStorage = graph.getTurnCostStorage();
         chConfigs = graph.getCHConfigs();
         // important: for LM preparation we need to use a weighting without turn costs #1960
-        lmConfig = new LMConfig("config", chConfigs.get(0).getWeighting());
+        lmConfig = new LMConfig("car", chConfigs.get(0).getWeighting());
         weighting = traversalMode.isEdgeBased() ? chConfigs.get(1).getWeighting() : chConfigs.get(0).getWeighting();
     }
 
@@ -184,9 +185,9 @@ public class RandomizedRoutingTest {
                 return algoFactory.createAlgo(new PMap().putObject(ALGORITHM, ASTAR_BI));
             }
             case LM_BIDIR:
-                return lm.getRoutingAlgorithmFactory().createAlgo(graph, AlgorithmOptions.start().weighting(weighting).algorithm(ASTAR_BI).traversalMode(traversalMode).build());
+                return lm.getRoutingAlgorithmFactory().createAlgo(graph, weighting, new AlgorithmOptions().setAlgorithm(ASTAR_BI).setTraversalMode(traversalMode));
             case LM_UNIDIR:
-                return lm.getRoutingAlgorithmFactory().createAlgo(graph, AlgorithmOptions.start().weighting(weighting).algorithm(ASTAR).traversalMode(traversalMode).build());
+                return lm.getRoutingAlgorithmFactory().createAlgo(graph, weighting, new AlgorithmOptions().setAlgorithm(ASTAR).setTraversalMode(traversalMode));
             case PERFECT_ASTAR: {
                 AStarBidirection perfectAStarBi = new AStarBidirection(graph, weighting, traversalMode);
                 perfectAStarBi.setApproximation(new PerfectApproximator(graph, weighting, traversalMode, false));

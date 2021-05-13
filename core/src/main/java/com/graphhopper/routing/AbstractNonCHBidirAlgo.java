@@ -19,7 +19,6 @@ package com.graphhopper.routing;
 
 import com.carrotsearch.hppc.IntObjectMap;
 import com.graphhopper.routing.util.EdgeFilter;
-import com.graphhopper.routing.util.FlagEncoder;
 import com.graphhopper.routing.util.TraversalMode;
 import com.graphhopper.routing.weighting.Weighting;
 import com.graphhopper.storage.Graph;
@@ -44,7 +43,6 @@ public abstract class AbstractNonCHBidirAlgo extends AbstractBidirAlgo implement
     protected final Graph graph;
     protected final NodeAccess nodeAccess;
     protected final Weighting weighting;
-    protected final FlagEncoder flagEncoder;
     protected EdgeExplorer edgeExplorer;
     protected EdgeFilter additionalEdgeFilter;
 
@@ -53,7 +51,6 @@ public abstract class AbstractNonCHBidirAlgo extends AbstractBidirAlgo implement
         this.weighting = weighting;
         if (weighting.hasTurnCosts() && !tMode.isEdgeBased())
             throw new IllegalStateException("Weightings supporting turn costs cannot be used with node-based traversal mode");
-        this.flagEncoder = weighting.getFlagEncoder();
         this.graph = graph;
         this.nodeAccess = graph.getNodeAccess();
         edgeExplorer = graph.createEdgeExplorer();

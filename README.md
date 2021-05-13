@@ -23,12 +23,12 @@ We even have [good first issues](https://github.com/graphhopper/graphhopper/issu
 
 To get started you can try [GraphHopper Maps](README.md#graphhopper-maps), read through our documentation and install the GraphHopper Web Service locally.
 
- * stable 2.x: [documentation](https://github.com/graphhopper/graphhopper/blob/2.x/docs/index.md), [web service jar](https://graphhopper.com/public/releases/graphhopper-web-2.3.jar), [announcement](https://www.graphhopper.com/blog/2020/09/30/graphhopper-routing-engine-2-0-released/)
+ * stable 2.x: [documentation](https://github.com/graphhopper/graphhopper/blob/2.x/docs/index.md), [web service jar](https://graphhopper.com/public/releases/graphhopper-web-2.4.jar), [announcement](https://www.graphhopper.com/blog/2020/09/30/graphhopper-routing-engine-2-0-released/)
  * unstable master: [documentation](https://github.com/graphhopper/graphhopper/blob/master/docs/index.md)
 
 <details><summary>Click to see older releases</summary>
 
- * See our [changelog file](./core/files/changelog.txt) for Java API Changes.
+ * See our [changelog file](./CHANGELOG.md) for Java API Changes.
  * 1.0: [documentation](https://github.com/graphhopper/graphhopper/blob/1.0/docs/index.md), [web service jar](https://graphhopper.com/public/releases/graphhopper-web-1.0.jar), [Android APK](https://graphhopper.com/public/releases/graphhopper-android-1.0.apk), [announcement](https://www.graphhopper.com/blog/2020/05/25/graphhopper-routing-engine-1-0-released/)
  * 0.13.0: [documentation](https://github.com/graphhopper/graphhopper/blob/0.13/docs/index.md), [web service jar](https://graphhopper.com/public/releases/graphhopper-web-0.13.0.jar), [Android APK](https://graphhopper.com/public/releases/graphhopper-android-0.13.0.apk), [announcement](https://www.graphhopper.com/blog/2019/09/18/graphhopper-routing-engine-0-13-released/)
  * 0.12.0: [documentation](https://github.com/graphhopper/graphhopper/blob/0.12/docs/index.md), [web service jar](https://graphhopper.com/public/releases/graphhopper-web-0.12.0.jar), [Android APK](https://graphhopper.com/public/releases/graphhopper-android-0.12.0.apk), [announcement](https://www.graphhopper.com/blog/2019/03/26/graphhopper-routing-engine-0-12-released/)
@@ -45,7 +45,7 @@ To install the [GraphHopper Maps](https://graphhopper.com/maps/) and the web ser
 
 ```bash
 # download and install a JVM that supports at least Java 8 (https://adoptopenjdk.net)
-wget https://graphhopper.com/public/releases/graphhopper-web-2.3.jar https://raw.githubusercontent.com/graphhopper/graphhopper/stable/config-example.yml http://download.geofabrik.de/europe/germany/berlin-latest.osm.pbf
+wget https://graphhopper.com/public/releases/graphhopper-web-2.4.jar https://raw.githubusercontent.com/graphhopper/graphhopper/stable/config-example.yml http://download.geofabrik.de/europe/germany/berlin-latest.osm.pbf
 java -Ddw.graphhopper.datareader.file=berlin-latest.osm.pbf -jar *.jar server config-example.yml
 ```
 
@@ -88,7 +88,7 @@ demo and [this pull request](http://github.com/graphhopper/graphhopper-ios) of t
 
 ## Analysis
 
-There is the isochrone subproject to calculate and visualize the reachable area for a certain travel mode
+Use isochrones to calculate and visualize the reachable area for a certain travel mode
 
 ### [Isochrone Web API](../stable/docs/web/api-doc.md#isochrone)
 
@@ -154,22 +154,12 @@ Embed GraphHopper with OpenStreetMap support into your Java application via the 
 ```xml
 <dependency>
     <groupId>com.graphhopper</groupId>
-    <artifactId>graphhopper-reader-osm</artifactId>
+    <artifactId>graphhopper-core</artifactId>
     <version>[LATEST-VERSION]</version>
 </dependency>
 ```
 
 See [our example application](./example/src/main/java/com/graphhopper/example/RoutingExample.java) to get started fast.
-
-If you want to write your own import procedure, then you might only need:
-
-```xml
-<dependency>
-    <groupId>com.graphhopper</groupId>
-    <artifactId>graphhopper-core</artifactId>
-    <version>[LATEST-VERSION]</version>
-</dependency>
-```
 
 ## Customizable
 

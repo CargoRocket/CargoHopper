@@ -28,12 +28,14 @@ import com.graphhopper.routing.AStarBidirection;
 import com.graphhopper.routing.BidirRoutingAlgorithm;
 import com.graphhopper.routing.DijkstraBidirectionRef;
 import com.graphhopper.routing.Path;
+import com.graphhopper.routing.ev.BooleanEncodedValue;
+import com.graphhopper.routing.ev.Subnetwork;
 import com.graphhopper.routing.lm.LMApproximator;
 import com.graphhopper.routing.lm.LandmarkStorage;
 import com.graphhopper.routing.lm.PrepareLandmarks;
 import com.graphhopper.routing.querygraph.QueryGraph;
 import com.graphhopper.routing.querygraph.VirtualEdgeIteratorState;
-import com.graphhopper.routing.util.DefaultEdgeFilter;
+import com.graphhopper.routing.util.DefaultSnapFilter;
 import com.graphhopper.routing.util.EdgeFilter;
 import com.graphhopper.routing.util.TraversalMode;
 import com.graphhopper.routing.weighting.Weighting;
@@ -81,7 +83,9 @@ public class MapMatching {
     private double transitionProbabilityBeta = 2.0;
     private final int maxVisitedNodes;
     private final DistanceCalc distanceCalc = new DistancePlaneProjection();
-    private final Weighting weighting;
+    private final Weighting unwrappedWeighting;
+    private Weighting weighting;
+    private final BooleanEncodedValue inSubnetworkEnc;
     private QueryGraph queryGraph;
 
     public MapMatching(GraphHopper graphHopper, PMap hints) {
@@ -138,7 +142,8 @@ public class MapMatching {
             landmarks = null;
         }
         graph = graphHopper.getGraphHopperStorage();
-        weighting = graphHopper.createWeighting(profile, hints);
+        unwrappedWeighting = graphHopper.createWeighting(profile, hints);
+        inSubnetworkEnc = graphHopper.getEncodingManager().getBooleanEncodedValue(Subnetwork.key(profileStr));
         this.maxVisitedNodes = hints.getInt(Parameters.Routing.MAX_VISITED_NODES, Integer.MAX_VALUE);
     }
 
@@ -169,6 +174,7 @@ public class MapMatching {
         // Create the query graph, containing split edges so that all the places where an observation might have happened
         // are a node. This modifies the Snap objects and puts the new node numbers into them.
         queryGraph = QueryGraph.create(graph, snapsPerObservation.stream().flatMap(Collection::stream).collect(Collectors.toList()));
+        weighting = queryGraph.wrapWeighting(unwrappedWeighting);
 
         // Creates candidates from the Snaps of all observations (a candidate is basically a
         // Snap + direction).
@@ -215,7 +221,7 @@ public class MapMatching {
         double rLon = (measurementErrorSigma * 360.0 / DistanceCalcEarth.DIST_EARTH.calcCircumference(queryLat));
         double rLat = measurementErrorSigma / DistanceCalcEarth.METERS_PER_DEGREE;
         Envelope envelope = new Envelope(queryLon, queryLon, queryLat, queryLat);
-        for (int i=0; i<50; i++) {
+        for (int i = 0; i < 50; i++) {
             envelope.expandBy(rLon, rLat);
             List<Snap> snaps = findCandidateSnapsInBBox(queryLat, queryLon, BBox.fromEnvelope(envelope));
             if (!snaps.isEmpty()) {
@@ -226,7 +232,7 @@ public class MapMatching {
     }
 
     private List<Snap> findCandidateSnapsInBBox(double queryLat, double queryLon, BBox queryShape) {
-        EdgeFilter edgeFilter = DefaultEdgeFilter.allEdges(weighting.getFlagEncoder().getAccessEnc());
+        EdgeFilter edgeFilter = new DefaultSnapFilter(unwrappedWeighting, inSubnetworkEnc);
         List<Snap> snaps = new ArrayList<>();
         IntHashSet seenEdges = new IntHashSet();
         IntHashSet seenNodes = new IntHashSet();
@@ -238,7 +244,7 @@ public class MapMatching {
                         if (seenEdges.add(edgeId) && edgeFilter.accept(edge)) {
                             Snap snap = new Snap(queryLat, queryLon);
                             locationIndex.traverseEdge(queryLat, queryLon, edge, (node, normedDist, wayIndex, pos) -> {
-                                if ((pos != Snap.Position.TOWER || seenNodes.add(node)) && normedDist < snap.getQueryDistance()) {
+                                if (normedDist < snap.getQueryDistance()) {
                                     snap.setQueryDistance(normedDist);
                                     snap.setClosestNode(node);
                                     snap.setWayIndex(wayIndex);
@@ -248,7 +254,7 @@ public class MapMatching {
                             double dist = DIST_PLANE.calcDenormalizedDist(snap.getQueryDistance());
                             snap.setClosestEdge(edge);
                             snap.setQueryDistance(dist);
-                            if (snap.isValid()) {
+                            if (snap.isValid() && (snap.getSnappedPosition() != Snap.Position.TOWER || seenNodes.add(snap.getClosestNode()))) {
                                 snap.calcSnappedPoint(DistanceCalcEarth.DIST_EARTH);
                                 if (queryShape.contains(snap.getSnappedPoint().lat, snap.getSnappedPoint().lon)) {
                                     snaps.add(snap);

@@ -2,7 +2,7 @@
 
 GraphHopper licensed under the Apache license, Version 2.0
 
-Copyright 2012 - 2017 GraphHopper GmbH
+Copyright 2012 - 2021 GraphHopper GmbH
 
 The core module includes the following software:
 
@@ -18,9 +18,6 @@ The core module includes the following software:
  * org.locationtech:jts (EDL), see #1039
  * AngleCalc.atan2 from Jim Shima, 1999 (public domain)
  * list of Java keywords in EncodingManager from janino compiler (BSD-3-Clause license)
-
-reader-osm:
-
  * protobuf - New BSD license
  * OSM-binary - LGPL license
  * Osmosis - public domain, see osmosis-copying.txt under core/files

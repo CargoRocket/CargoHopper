@@ -105,17 +105,27 @@ public class CargobikeFlagEncoder extends BikeFlagEncoder {
     @Override
     public void createEncodedValues(List<EncodedValue> registerNewEncodedValue, String prefix, int index) {
         super.createEncodedValues(registerNewEncodedValue, prefix, index);
-        registerNewEncodedValue.add(cargobikeindexEnc = new UnsignedDecimalEncodedValue(getKey(prefix, "cbi"), 6, 0.1, Double.POSITIVE_INFINITY, false));
+        registerNewEncodedValue.add(cargobikeindexEnc = new UnsignedDecimalEncodedValue(getKey(prefix, "cbi"), 6, 0.1, Double.POSITIVE_INFINITY, true));
     }
 
     @Override
     public IntsRef handleWayTags(IntsRef edgeFlags, ReaderWay way, EncodingManager.Access accept) {
         super.handleWayTags(edgeFlags, way, accept);
 
+
+        // Set cbi if no cbi:forward/cbi:backward is available
         String tag_value = way.getTag("cbi");
+        String tag_value_fwd = way.getTag("cbi:forward");
+        String tag_value_bwd = way.getTag("cbi:backward");
         if (tag_value != null) {
             double value = Double.parseDouble((tag_value));
             cargobikeindexEnc.setDecimal(false, edgeFlags, value);
+            cargobikeindexEnc.setDecimal(true, edgeFlags, value);
+        } else if (tag_value_fwd != null && tag_value_bwd != null ) {
+            double value_fwd = Double.parseDouble((tag_value_fwd));
+            double value_bwd = Double.parseDouble((tag_value_bwd));
+            cargobikeindexEnc.setDecimal(false, edgeFlags, value_fwd);
+            cargobikeindexEnc.setDecimal(true, edgeFlags, value_bwd);
         }
         return edgeFlags;
     }

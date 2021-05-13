@@ -18,10 +18,12 @@
  */
 package com.graphhopper.routing.util;
 
+import com.graphhopper.reader.ReaderWay;
 import com.graphhopper.routing.ev.DecimalEncodedValue;
 import com.graphhopper.routing.ev.EncodedValue;
 import com.graphhopper.routing.ev.UnsignedDecimalEncodedValue;
 import com.graphhopper.routing.weighting.CargoBikeIndexWeighting;
+import com.graphhopper.storage.IntsRef;
 import com.graphhopper.util.PMap;
 import java.util.List;
 
@@ -103,7 +105,19 @@ public class CargobikeFlagEncoder extends BikeFlagEncoder {
     @Override
     public void createEncodedValues(List<EncodedValue> registerNewEncodedValue, String prefix, int index) {
         super.createEncodedValues(registerNewEncodedValue, prefix, index);
-        registerNewEncodedValue.add(cargobikeindexEnc = new UnsignedDecimalEncodedValue(getKey(prefix, "cargobikeindex"), 6, 0.1, Double.POSITIVE_INFINITY, false));
+        registerNewEncodedValue.add(cargobikeindexEnc = new UnsignedDecimalEncodedValue(getKey(prefix, "cbi"), 6, 0.1, Double.POSITIVE_INFINITY, false));
+    }
+
+    @Override
+    public IntsRef handleWayTags(IntsRef edgeFlags, ReaderWay way, EncodingManager.Access accept) {
+        super.handleWayTags(edgeFlags, way, accept);
+
+        String tag_value = way.getTag("cbi");
+        if (tag_value != null) {
+            double value = Double.parseDouble((tag_value));
+            cargobikeindexEnc.setDecimal(false, edgeFlags, value);
+        }
+        return edgeFlags;
     }
 
     @Override

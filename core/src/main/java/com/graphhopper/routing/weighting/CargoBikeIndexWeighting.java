@@ -29,14 +29,14 @@ import com.graphhopper.util.PMap;
  *
  * @author Henri Chilla
  */
-public class CargoBikeIndexWeighting extends PriorityWeighting {
+public class CargoBikeIndexWeighting extends FastestWeighting {
 
     private final double minFactor;
     private final DecimalEncodedValue cargobikability;
 
     public CargoBikeIndexWeighting(FlagEncoder encoder, PMap pMap, TurnCostProvider turnCostProvider) {
         super(encoder, pMap, turnCostProvider);
-        String key = EncodingManager.getKey(encoder, "cargobikeindex");
+        String key = EncodingManager.getKey(encoder, "cbi");
         cargobikability = encoder.getDecimalEncodedValue(key);
 
         double maxPriority = 5.0;
@@ -51,11 +51,23 @@ public class CargoBikeIndexWeighting extends PriorityWeighting {
 
     @Override
     public double calcEdgeWeight(EdgeIteratorState edgeState, boolean reverse) {
+        double cbi_value = edgeState.get(cargobikability);
         double weight = super.calcEdgeWeight(edgeState, reverse);
         if (Double.isInfinite(weight))
             return Double.POSITIVE_INFINITY;
-        double cargofactor = edgeState.get(cargobikability);
-        double newWeight = weight * cargofactor;
-        return newWeight;
+        if ( !Double.isInfinite(cbi_value)) {
+            weight = weight * cbi_value;
+            if(cbi_value < 0.5){
+                weight = weight * 10;
+            } else {
+                weight = weight / cbi_value;
+            }
+        }
+        return weight;
+    }
+
+    @Override
+    public String getName() {
+        return "cbi";
     }
 }

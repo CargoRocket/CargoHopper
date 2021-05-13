@@ -35,6 +35,10 @@ public class OSMCargoBikeIndexRatingParser implements TagParser {
         this.cargoBikeIndex = CargoBikeIndexRating.create();
     }
 
+    public OSMCargoBikeIndexRatingParser(DecimalEncodedValue cbi) {
+        this.cargoBikeIndex = cbi;
+    }
+
     @Override
     public void createEncodedValues(EncodedValueLookup lookup, List<EncodedValue> link) {
         link.add(cargoBikeIndex);
@@ -42,11 +46,10 @@ public class OSMCargoBikeIndexRatingParser implements TagParser {
 
     @Override
     public IntsRef handleWayTags(IntsRef edgeFlags, ReaderWay readerWay, boolean ferry, IntsRef relationFlags) {
-        String tag = readerWay.getTag("cargobikeindex");
+        String tag = readerWay.getTag("cbi");
         double rating = 0;
         if (tag != null) {
-            double index = Double.parseDouble(tag);
-            rating = index;
+            rating = Double.parseDouble(tag);
         }
         if (rating != 0)
             cargoBikeIndex.setDecimal(false, edgeFlags, rating);

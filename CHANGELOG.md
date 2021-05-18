@@ -1,5 +1,12 @@
-### 3.0 [not yet released]
+### 4.0 [not yet released]
 
+- added smoothness encoded value, used to determine bike speed (#2303)
+- migrated tests from junit 4 to 5 (#2324)
+
+### 3.0 [17 May 2021]
+
+- removed the stable tag (was pointing to commit dd2c20c763e4c19b701e92386432b37713cd8dc5)
+- fix location lookup with point hints for curved roads, #2319
 - custom_model_file only accepts file names without path. Use custom_model_folder instead.
 - the load method in GraphHopperWeb (client-hc) was removed
 - routing.ch.disabling_allowed and routing.lm.disabling_allowed configuration options are no longer supported
@@ -302,8 +309,7 @@
 
 ### 0.2.0 [23 Nov 2013]
 
-- change inconsistent default settings for contraction hierarchies in the API -
-  see https://lists.openstreetmap.org/pipermail/graphhopper/2013-December/000585.html
+- change inconsistent default settings for contraction hierarchies in the API - see https://lists.openstreetmap.org/pipermail/graphhopper/2013-December/000585.html
 - fixed issues with android:
   * graphhopper: use maps from 0.2 path; updated maps
   * mapsforge: use mapsforge-map dependency; merged #461; avoid duplicates otherwise mapsforge-core would be duplicate (

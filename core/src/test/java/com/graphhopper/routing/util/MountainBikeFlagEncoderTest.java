@@ -23,10 +23,11 @@ import com.graphhopper.reader.ReaderWay;
 import com.graphhopper.storage.IntsRef;
 import com.graphhopper.util.GHUtility;
 import com.graphhopper.util.PMap;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
+import static com.graphhopper.routing.util.BikeCommonFlagEncoder.PUSHING_SECTION_SPEED;
 import static com.graphhopper.routing.util.PriorityCode.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MountainBikeFlagEncoderTest extends AbstractBikeFlagEncoderTester {
     @Override
@@ -81,6 +82,42 @@ public class MountainBikeFlagEncoderTest extends AbstractBikeFlagEncoderTester {
         way.setTag("surface", "ground");
         assertEquals(16, encoder.getSpeed(way));
         assertPriority(PREFER.getValue(), way);
+    }
+    
+    @Test
+    public void testSmoothness() {
+        ReaderWay way = new ReaderWay(1);
+        way.setTag("highway", "residential");
+        way.setTag("smoothness", "excellent");
+        assertEquals(18, getSpeedFromFlags(way), 0.01);
+
+        way.setTag("smoothness", "bad");
+        assertEquals(12, getSpeedFromFlags(way), 0.01);
+
+        way.setTag("smoothness", "impassable");
+        assertEquals(PUSHING_SECTION_SPEED, getSpeedFromFlags(way), 0.01);
+
+        way.setTag("smoothness", "unknown");
+        assertEquals(12, getSpeedFromFlags(way), 0.01);
+
+        way.clearTags();
+        way.setTag("highway", "residential");
+        way.setTag("surface", "ground");
+        assertEquals(16, getSpeedFromFlags(way), 0.01);
+
+        way.setTag("smoothness", "bad");
+        assertEquals(12, getSpeedFromFlags(way), 0.01);
+
+        way.clearTags();
+        way.setTag("highway", "track");
+        way.setTag("tracktype", "grade5");
+        assertEquals(6, getSpeedFromFlags(way), 0.01);
+
+        way.setTag("smoothness", "bad");
+        assertEquals(PUSHING_SECTION_SPEED, getSpeedFromFlags(way), 0.01);
+
+        way.setTag("smoothness", "impassable");
+        assertEquals(PUSHING_SECTION_SPEED, getSpeedFromFlags(way), 0.01);
     }
 
     @Test

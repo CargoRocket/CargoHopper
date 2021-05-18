@@ -38,9 +38,9 @@ import com.graphhopper.storage.index.LocationIndexTree;
 import com.graphhopper.util.*;
 import com.graphhopper.util.shapes.BBox;
 import com.graphhopper.util.shapes.GHPoint;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.*;
@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.graphhopper.util.Parameters.Algorithms.DIJKSTRA_BI;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Peter Karich
@@ -61,12 +61,12 @@ public class GraphHopperOSMTest {
     private static final String testOsm8 = "./src/test/resources/com/graphhopper/reader/osm/test-osm8.xml";
     private GraphHopper instance;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         Helper.removeDir(new File(ghLoc));
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         if (instance != null)
             instance.close();
@@ -88,7 +88,7 @@ public class GraphHopperOSMTest {
         GHResponse rsp = hopper.route(new GHRequest(51.2492152, 9.4317166, 51.2, 9.4).
                 setProfile(profile));
         assertFalse(rsp.hasErrors());
-        assertEquals(3, rsp.getBest().getPoints().getSize());
+        assertEquals(3, rsp.getBest().getPoints().size());
 
         hopper.close();
 
@@ -101,7 +101,7 @@ public class GraphHopperOSMTest {
         rsp = hopper.route(new GHRequest(51.2492152, 9.4317166, 51.2, 9.4).
                 setProfile(profile));
         assertFalse(rsp.hasErrors());
-        assertEquals(3, rsp.getBest().getPoints().getSize());
+        assertEquals(3, rsp.getBest().getPoints().size());
 
         hopper.close();
         try {
@@ -137,7 +137,7 @@ public class GraphHopperOSMTest {
         GHResponse rsp = gh.route(new GHRequest(51.2492152, 9.4317166, 51.2, 9.4)
                 .setProfile(profile));
         assertFalse(rsp.hasErrors());
-        assertEquals(3, rsp.getBest().getPoints().getSize());
+        assertEquals(3, rsp.getBest().getPoints().size());
 
         gh.close();
         gh = new GraphHopper().
@@ -147,7 +147,7 @@ public class GraphHopperOSMTest {
         rsp = gh.route(new GHRequest(51.2492152, 9.4317166, 51.2, 9.4)
                 .setProfile(profile));
         assertFalse(rsp.hasErrors());
-        assertEquals(3, rsp.getBest().getPoints().getSize());
+        assertEquals(3, rsp.getBest().getPoints().size());
 
         gh.close();
 
@@ -174,21 +174,14 @@ public class GraphHopperOSMTest {
         LocationIndexTree index = (LocationIndexTree) gh.getLocationIndex();
         final EdgeExplorer edgeExplorer = gh.getGraphHopperStorage().createEdgeExplorer();
         final BBox bbox = new BBox(7.422, 7.429, 43.729, 43.734);
-        index.query(bbox, new LocationIndexTree.Visitor() {
-            @Override
-            public void onTile(BBox bbox, int width) {
-            }
-
-            @Override
-            public void onEdge(int edgeId) {
-                EdgeIteratorState edge = gh.getGraphHopperStorage().getEdgeIteratorStateForKey(edgeId * 2);
-                for (int i = 0; i < 2; i++) {
-                    int nodeId = i == 0 ? edge.getBaseNode() : edge.getAdjNode();
-                    double lat = na.getLat(nodeId);
-                    double lon = na.getLon(nodeId);
-                    if (bbox.contains(lat, lon))
-                        indexNodeList.add(nodeId);
-                }
+        index.query(bbox, edgeId -> {
+            EdgeIteratorState edge = gh.getGraphHopperStorage().getEdgeIteratorStateForKey(edgeId * 2);
+            for (int i = 0; i < 2; i++) {
+                int nodeId = i == 0 ? edge.getBaseNode() : edge.getAdjNode();
+                double lat = na.getLat(nodeId);
+                double lon = na.getLon(nodeId);
+                if (bbox.contains(lat, lon))
+                    indexNodeList.add(nodeId);
             }
         });
 
@@ -216,8 +209,8 @@ public class GraphHopperOSMTest {
             }
         }.start(edgeExplorer, index.findClosest(43.731, 7.425, EdgeFilter.ALL_EDGES).getClosestNode());
 
-        assertTrue("index size: " + indexNodeList.size() + ", bfs size: " + bfsNodeList.size(), indexNodeList.size() >= bfsNodeList.size());
-        assertTrue("index size: " + indexNodeList.size() + ", bfs size: " + bfsNodeList.size(), indexNodeList.containsAll(bfsNodeList));
+        assertTrue(indexNodeList.size() >= bfsNodeList.size(), "index size: " + indexNodeList.size() + ", bfs size: " + bfsNodeList.size());
+        assertTrue(indexNodeList.containsAll(bfsNodeList), "index size: " + indexNodeList.size() + ", bfs size: " + bfsNodeList.size());
     }
 
     @Test
@@ -236,7 +229,7 @@ public class GraphHopperOSMTest {
         gh.importOrLoad();
         GHResponse rsp = gh.route(new GHRequest(51.2492152, 9.4317166, 51.2, 9.4).setProfile(profile));
         assertFalse(rsp.hasErrors());
-        assertEquals(3, rsp.getBest().getPoints().getSize());
+        assertEquals(3, rsp.getBest().getPoints().size());
         gh.close();
 
         // now load GH without CH profile
@@ -257,7 +250,7 @@ public class GraphHopperOSMTest {
         gh.importOrLoad();
         rsp = gh.route(new GHRequest(51.2492152, 9.4317166, 51.2, 9.4).setProfile(profile));
         assertFalse(rsp.hasErrors());
-        assertEquals(3, rsp.getBest().getPoints().getSize());
+        assertEquals(3, rsp.getBest().getPoints().size());
         gh.close();
 
         gh = new GraphHopper().
@@ -269,7 +262,7 @@ public class GraphHopperOSMTest {
             gh.load(ghLoc);
             fail();
         } catch (Exception ex) {
-            assertTrue(ex.getMessage(), ex.getMessage().contains("is not contained in loaded CH profiles"));
+            assertTrue(ex.getMessage().contains("is not contained in loaded CH profiles"), ex.getMessage());
         }
     }
 
@@ -342,7 +335,7 @@ public class GraphHopperOSMTest {
             fail("There should have been an error because of the lock");
         } catch (RuntimeException ex) {
             assertNotNull(ex);
-            assertTrue(ex.getMessage(), ex.getMessage().startsWith("To avoid reading partial data"));
+            assertTrue(ex.getMessage().startsWith("To avoid reading partial data"), ex.getMessage());
         } finally {
             instance2.close();
             latch1.countDown();
@@ -351,7 +344,7 @@ public class GraphHopperOSMTest {
         }
 
         if (ar.get() != null)
-            assertNull(ar.get().getMessage(), ar.get());
+            assertNull(ar.get(), ar.get().getMessage());
         instance1.close();
     }
 
@@ -373,7 +366,7 @@ public class GraphHopperOSMTest {
                 setAlgorithm(DIJKSTRA_BI));
         assertFalse(rsp.hasErrors());
         assertEquals(Helper.createPointList(51.249215, 9.431716, 52.0, 9.0, 51.2, 9.4), rsp.getBest().getPoints());
-        assertEquals(3, rsp.getBest().getPoints().getSize());
+        assertEquals(3, rsp.getBest().getPoints().size());
     }
 
     @Test
@@ -392,7 +385,7 @@ public class GraphHopperOSMTest {
                 setProfile(profile).
                 setAlgorithm(DIJKSTRA_BI)).getBest();
         assertFalse(rsp.hasErrors());
-        assertEquals(3, rsp.getPoints().getSize());
+        assertEquals(3, rsp.getPoints().size());
         assertEquals(new GHPoint(51.24921503475044, 9.431716451757769), rsp.getPoints().get(0));
         assertEquals(new GHPoint(52.0, 9.0), rsp.getPoints().get(1));
         assertEquals(new GHPoint(51.199999850988384, 9.39999970197677), rsp.getPoints().get(2));
@@ -406,7 +399,7 @@ public class GraphHopperOSMTest {
 
         req.putHint("instructions", false);
         instance.route(req);
-        assertEquals("route method should not change instance field", old, instance.getEncodingManager().isEnableInstructions());
+        assertEquals(old, instance.getEncodingManager().isEnableInstructions(), "route method should not change instance field");
     }
 
     @Test
@@ -440,9 +433,9 @@ public class GraphHopperOSMTest {
 
         // A to D
         GHResponse grsp = instance.route(new GHRequest(11.1, 50, 11.3, 51).setProfile(profile1));
-        assertFalse(grsp.getErrors().toString(), grsp.hasErrors());
+        assertFalse(grsp.hasErrors(), grsp.getErrors().toString());
         ResponsePath rsp = grsp.getBest();
-        assertEquals(3, rsp.getPoints().getSize());
+        assertEquals(3, rsp.getPoints().size());
         // => found A and D
         assertEquals(50, rsp.getPoints().getLon(0), 1e-3);
         assertEquals(11.1, rsp.getPoints().getLat(0), 1e-3);
@@ -453,7 +446,7 @@ public class GraphHopperOSMTest {
         grsp = instance.route(new GHRequest(11.1, 50, 11.3, 51).setProfile(profile2));
         assertFalse(grsp.hasErrors());
         rsp = grsp.getBest();
-        assertEquals(2, rsp.getPoints().getSize());
+        assertEquals(2, rsp.getPoints().size());
         // => found a point on edge A-B        
         assertEquals(11.680, rsp.getPoints().getLat(1), 1e-3);
         assertEquals(50.644, rsp.getPoints().getLon(1), 1e-3);
@@ -468,7 +461,7 @@ public class GraphHopperOSMTest {
         grsp = instance.route(new GHRequest(11.1, 50, 10, 51).setProfile(profile1));
         assertFalse(grsp.hasErrors());
         rsp = grsp.getBest();
-        assertEquals(3, rsp.getPoints().getSize());
+        assertEquals(3, rsp.getPoints().size());
     }
 
     @Test
@@ -501,7 +494,7 @@ public class GraphHopperOSMTest {
             tmpGH.load(ghLoc);
             fail();
         } catch (Exception ex) {
-            assertTrue(ex.getMessage(), ex.getMessage().startsWith("Encoding does not match"));
+            assertTrue(ex.getMessage().startsWith("Encoding does not match"), ex.getMessage());
         }
 
         // different order is no longer okay, see #350
@@ -518,7 +511,7 @@ public class GraphHopperOSMTest {
             tmpGH.load(ghLoc);
             fail();
         } catch (Exception ex) {
-            assertTrue(ex.getMessage(), ex.getMessage().startsWith("Encoding does not match"));
+            assertTrue(ex.getMessage().startsWith("Encoding does not match"), ex.getMessage());
         }
 
         // different encoded values should fail to load
@@ -537,7 +530,7 @@ public class GraphHopperOSMTest {
             instance.load(ghLoc);
             fail();
         } catch (Exception ex) {
-            assertTrue(ex.getMessage(), ex.getMessage().startsWith("Encoded values do not match"));
+            assertTrue(ex.getMessage().startsWith("Encoded values do not match"), ex.getMessage());
         }
 
         // different version for car should fail
@@ -558,7 +551,7 @@ public class GraphHopperOSMTest {
             instance.load(ghLoc);
             fail();
         } catch (Exception ex) {
-            assertTrue(ex.getMessage(), ex.getMessage().startsWith("Encoding does not match"));
+            assertTrue(ex.getMessage().startsWith("Encoding does not match"), ex.getMessage());
         }
     }
 
@@ -597,7 +590,7 @@ public class GraphHopperOSMTest {
             instance.load(ghLoc);
             fail();
         } catch (Exception ex) {
-            assertTrue(ex.getMessage(), ex.getMessage().startsWith("Encoded values do not match"));
+            assertTrue(ex.getMessage().startsWith("Encoded values do not match"), ex.getMessage());
         }
     }
 
@@ -687,7 +680,7 @@ public class GraphHopperOSMTest {
             instance.importOrLoad();
             fail();
         } catch (IllegalStateException ex) {
-            assertTrue(ex.getMessage(), ex.getMessage().startsWith("no profiles exist but assumed to create EncodingManager"));
+            assertTrue(ex.getMessage().startsWith("no profiles exist but assumed to create EncodingManager"), ex.getMessage());
         }
 
         // Import is possible even if no storeOnFlush is specified BUT here we miss the OSM file
@@ -752,17 +745,17 @@ public class GraphHopperOSMTest {
         GHPoint second = new GHPoint(12, 51);
         GHPoint third = new GHPoint(11.2, 51.9);
         GHResponse rsp12 = instance.route(new GHRequest(first, second).setProfile(profile));
-        assertFalse("should find 1->2", rsp12.hasErrors());
+        assertFalse(rsp12.hasErrors(), "should find 1->2");
         assertEquals(147930.5, rsp12.getBest().getDistance(), .1);
         GHResponse rsp23 = instance.route(new GHRequest(second, third).setProfile(profile));
-        assertFalse("should find 2->3", rsp23.hasErrors());
+        assertFalse(rsp23.hasErrors(), "should find 2->3");
         assertEquals(176608.9, rsp23.getBest().getDistance(), .1);
 
         GHResponse grsp = instance.route(new GHRequest(Arrays.asList(first, second, third)).setProfile(profile));
-        assertFalse("should find 1->2->3", grsp.hasErrors());
+        assertFalse(grsp.hasErrors(), "should find 1->2->3");
         ResponsePath rsp = grsp.getBest();
         assertEquals(rsp12.getBest().getDistance() + rsp23.getBest().getDistance(), rsp.getDistance(), 1e-6);
-        assertEquals(4, rsp.getPoints().getSize());
+        assertEquals(4, rsp.getPoints().size());
         assertEquals(5, rsp.getInstructions().size());
         assertEquals(Instruction.REACHED_VIA, rsp.getInstructions().get(1).getSign());
     }
@@ -797,7 +790,7 @@ public class GraphHopperOSMTest {
 
             assertEquals(5, hopper.getCHPreparationHandler().getPreparations().size());
             for (PrepareContractionHierarchies pch : hopper.getCHPreparationHandler().getPreparations()) {
-                assertTrue("Preparation wasn't run! [" + threadCount + "]", pch.isPrepared());
+                assertTrue(pch.isPrepared(), "Preparation wasn't run! [" + threadCount + "]");
 
                 String name = pch.getCHConfig().toFileName();
                 Long singleThreadShortcutCount = shortcutCountMap.get(name);
@@ -808,11 +801,11 @@ public class GraphHopperOSMTest {
 
                 String keyError = Parameters.CH.PREPARE + "error." + name;
                 String valueError = hopper.getGraphHopperStorage().getProperties().get(keyError);
-                assertTrue("Properties for " + name + " should NOT contain error " + valueError + " [" + threadCount + "]", valueError.isEmpty());
+                assertTrue(valueError.isEmpty(), "Properties for " + name + " should NOT contain error " + valueError + " [" + threadCount + "]");
 
                 String key = Parameters.CH.PREPARE + "date." + name;
                 String value = hopper.getGraphHopperStorage().getProperties().get(key);
-                assertFalse("Properties for " + name + " did NOT contain finish date [" + threadCount + "]", value.isEmpty());
+                assertFalse(value.isEmpty(), "Properties for " + name + " did NOT contain finish date [" + threadCount + "]");
             }
             hopper.close();
         }
@@ -848,7 +841,7 @@ public class GraphHopperOSMTest {
 
             assertEquals(5, hopper.getLMPreparationHandler().getPreparations().size());
             for (PrepareLandmarks prepLM : hopper.getLMPreparationHandler().getPreparations()) {
-                assertTrue("Preparation wasn't run! [" + threadCount + "]", prepLM.isPrepared());
+                assertTrue(prepLM.isPrepared(), "Preparation wasn't run! [" + threadCount + "]");
 
                 String name = prepLM.getLMConfig().getName();
                 Integer singleThreadShortcutCount = landmarkCount.get(name);
@@ -859,11 +852,11 @@ public class GraphHopperOSMTest {
 
                 String keyError = Parameters.Landmark.PREPARE + "error." + name;
                 String valueError = hopper.getGraphHopperStorage().getProperties().get(keyError);
-                assertTrue("Properties for " + name + " should NOT contain error " + valueError + " [" + threadCount + "]", valueError.isEmpty());
+                assertTrue(valueError.isEmpty(), "Properties for " + name + " should NOT contain error " + valueError + " [" + threadCount + "]");
 
                 String key = Parameters.Landmark.PREPARE + "date." + name;
                 String value = hopper.getGraphHopperStorage().getProperties().get(key);
-                assertFalse("Properties for " + name + " did NOT contain finish date [" + threadCount + "]", value.isEmpty());
+                assertFalse(value.isEmpty(), "Properties for " + name + " did NOT contain finish date [" + threadCount + "]");
             }
             hopper.close();
         }
@@ -926,7 +919,7 @@ public class GraphHopperOSMTest {
         hopper.importOrLoad();
         assertEquals(2, hopper.getCHPreparationHandler().getPreparations().size());
         for (PrepareContractionHierarchies p : hopper.getCHPreparationHandler().getPreparations()) {
-            assertTrue("did not get prepared", p.isPrepared());
+            assertTrue(p.isPrepared(), "did not get prepared");
         }
     }
 

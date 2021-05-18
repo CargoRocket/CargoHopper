@@ -22,11 +22,11 @@ import com.graphhopper.reader.ReaderRelation;
 import com.graphhopper.reader.ReaderWay;
 import com.graphhopper.storage.IntsRef;
 import com.graphhopper.util.PMap;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.graphhopper.routing.util.BikeCommonFlagEncoder.PUSHING_SECTION_SPEED;
 import static com.graphhopper.routing.util.PriorityCode.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Peter Karich
@@ -288,6 +288,42 @@ public class BikeFlagEncoderTest extends AbstractBikeFlagEncoderTester {
         way.setTag("highway", "motorway");
         way.setTag("bicycle", "yes");
         assertEquals(18, encoder.getSpeed(way));
+    }
+
+    @Test
+    public void testSmoothness() {
+        ReaderWay way = new ReaderWay(1);
+        way.setTag("highway", "residential");
+        way.setTag("smoothness", "excellent");
+        assertEquals(20, getSpeedFromFlags(way), 0.01);
+
+        way.setTag("smoothness", "bad");
+        assertEquals(14, getSpeedFromFlags(way), 0.01);
+
+        way.setTag("smoothness", "impassable");
+        assertEquals(PUSHING_SECTION_SPEED, getSpeedFromFlags(way), 0.01);
+
+        way.setTag("smoothness", "unknown");
+        assertEquals(14, getSpeedFromFlags(way), 0.01);
+
+        way.clearTags();
+        way.setTag("highway", "residential");
+        way.setTag("surface", "ground");
+        assertEquals(12, getSpeedFromFlags(way), 0.01);
+
+        way.setTag("smoothness", "bad");
+        assertEquals(8, getSpeedFromFlags(way), 0.01);
+
+        way.clearTags();
+        way.setTag("highway", "track");
+        way.setTag("tracktype", "grade5");
+        assertEquals(PUSHING_SECTION_SPEED, getSpeedFromFlags(way), 0.01);
+
+        way.setTag("smoothness", "bad");
+        assertEquals(PUSHING_SECTION_SPEED, getSpeedFromFlags(way), 0.01);
+
+        way.setTag("smoothness", "impassable");
+        assertEquals(PUSHING_SECTION_SPEED, getSpeedFromFlags(way), 0.01);
     }
 
     @Test

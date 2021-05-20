@@ -115,8 +115,8 @@ public class CargobikeFlagEncoder extends BikeFlagEncoder {
 
         // Set cbi if no cbi:forward/cbi:backward is available
         String tag_value = way.getTag("cbi");
-        String tag_value_fwd = way.getTag("cbi:forward");
-        String tag_value_bwd = way.getTag("cbi:backward");
+        String tag_value_fwd = way.getTag("cbi=>forward");
+        String tag_value_bwd = way.getTag("cbi=>backward");
         if (tag_value != null) {
             double value = Double.parseDouble((tag_value));
             cargobikeindexEnc.setDecimal(false, edgeFlags, value);

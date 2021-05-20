@@ -56,8 +56,12 @@ public class CargoBikeIndexWeighting extends FastestWeighting {
         if (Double.isInfinite(weight))
             return Double.POSITIVE_INFINITY;
         if ( !Double.isInfinite(cbi_value)) {
+            // Bad Index is exponential more bad
             double cargofactor = -Math.log(cbi_value) + 2.2;
             weight = weight * cargofactor;
+        } else {
+            // Where no Index is, no cargobike should drive
+            weight *= 100;
         }
         return weight;
     }

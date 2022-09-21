@@ -6,19 +6,30 @@ on:
       - master
 
 jobs:
-  publish:
-    runs-on: ubuntu-18.04
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [14.x]
+
     steps:
-      - uses: actions/checkout@v2
-      - name: Install ssh key
-        uses: shimataro/ssh-key-action@v2
+      - name: Setup ssh
+        uses: kielabokkie/ssh-key-and-known-hosts-action@v1
         with:
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          name: id_rsa
-          known_hosts: ${{ secrets.KNOWN_HOSTS }}
-      - name: Pushing to remote repository
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh-host: ${{secrets.SSH_HOST}}
+
+      - uses: actions/checkout@v2
+
+      - name: Install Docker Compose
         run: |
-          git remote add production ${{ secrets.REMOTE_PATH }}
-          git checkout master
-          git fetch --unshallow
-          git push -u production master --force
+          cd /tmp 
+          wget https://github.com/docker/compose/releases/download/v2.2.3/docker-compose-linux-x86_64 -O docker-compose
+          chmod 700 docker-compose
+
+      # ToDo: Build Application here to just pack jar in docker container. => cache maven dependencies
+
+      - name: Deploy to Docker Host
+        run: |
+          /tmp/docker-compose -H ssh://${{secrets.SSH_USER}}@${{secrets.SSH_HOST}} up --build -d

@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  cargorocket_de_gh:
+    image: "cargorocket_de_gh:latest"
+    build: .
+    container_name: "cargorocket_de_gh"
+    volumes:
+      - /srv/volumes/cargorocket/geo:/app/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cargorocket_de_gh.rule=Host(`graphhopper.cargorocket.de`)"
+      - "traefik.http.routers.cargorocket_de_gh.entrypoints=websecure"
+      - "traefik.http.routers.cargorocket_de_gh.tls=true"
+      - "traefik.http.routers.cargorocket_de_gh.tls.certResolver=lets_encrypt"

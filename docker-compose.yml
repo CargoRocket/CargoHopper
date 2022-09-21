@@ -13,3 +13,4 @@ services:
       - "traefik.http.routers.cargorocket_de_gh.entrypoints=websecure"
       - "traefik.http.routers.cargorocket_de_gh.tls=true"
       - "traefik.http.routers.cargorocket_de_gh.tls.certResolver=lets_encrypt"
+      - "traefik.http.services.cargorocket_de_gh.loadbalancer.server.port=8989"
